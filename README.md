@@ -4,38 +4,15 @@
 
 BlockBrief is an autonomous AI-powered news curator that delivers the most important crypto stories directly to your Telegram. Built on AWS serverless infrastructure with Amazon Bedrock.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  🌐 Crypto News Sources (20+ articles every 6 hours)       │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  🤖 AI Editor-in-Chief (Amazon Bedrock - Claude 3.5)       │
-│     • Analyzes all stories                                  │
-│     • Scores importance (market impact, regulation, etc.)   │
-│     • Selects top 3-5 stories                               │
-│     • Writes concise summaries (60-80 words)                │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  📱 Telegram Mini App                                       │
-│     • Beautiful, responsive UI                              │
-│     • Instant access (no install)                           │
-│     • Personalized preferences                              │
-│     • Brief history                                         │
-└─────────────────────────────────────────────────────────────┘
-```
-
 ## ✨ Features
 
 - 🤖 **Autonomous AI Curation** - Claude 3.5 Sonnet selects and summarizes stories
-- 📱 **Telegram Mini App** - Modern React UI, no installation required
-- ⚡ **Real-time Delivery** - New briefs every 6 hours
-- 🎯 **Personalized** - Choose topics (DeFi, NFTs, regulation, etc.)
-- 💰 **Cost-Efficient** - $50/month for 1000 users
-- 🚀 **Serverless** - Auto-scales on AWS Lambda, DynamoDB, Step Functions
+- 📱 **Telegram Mini App** - Modern UI with Telegram design system
+- ⚡ **Real-time Updates** - Latest crypto news from multiple sources
+- 🔖 **Save Articles** - Bookmark stories to read later
+- 🔍 **Search & Filter** - Find news by category or keyword
+- 💰 **Cost-Efficient** - Serverless architecture on AWS
+- 🚀 **Auto-Scaling** - Handles any load with Lambda & DynamoDB
 
 ## 🎯 Why BlockBrief?
 
@@ -65,74 +42,52 @@ BlockBrief is an autonomous AI-powered news curator that delivers the most impor
 cd infrastructure
 sam build
 sam deploy --guided
-# Enter your Telegram bot token when prompted
 ```
 
-3. **Deploy Frontend**
-```bash
-cd frontend
-npm install
-npm run build
-# Deploy to S3/CloudFront (automated in SAM template)
-```
-
-4. **Set Telegram Mini App URL**
+3. **Set Bot Menu Button**
 ```bash
 # In @BotFather:
-# /setmenubutton -> select bot -> send URL from CloudFront
+# /mybots -> select bot -> Bot Settings -> Menu Button
+# Enter your Mini App URL
 ```
 
 ## Architecture
 
-```
-┌──────────────┐
-│   Telegram   │  Users interact via Mini App & Bot
-│    Users     │
-└──────┬───────┘
-       │
-       ├─────────────────┐
-       │                 │
-       ▼                 ▼
-┌─────────────┐   ┌─────────────┐
-│ CloudFront  │   │ API Gateway │
-│  + S3       │   │  + Lambda   │
-│ (Mini App)  │   │  (Bot API)  │
-└──────┬──────┘   └──────┬──────┘
-       │                 │
-       └────────┬────────┘
-                │
-                ▼
-       ┌────────────────┐
-       │  DynamoDB      │  ← User data, briefs, news cache
-       └────────────────┘
-                ▲
-                │
-       ┌────────┴────────┐
-       │                 │
-       ▼                 ▼
-┌─────────────┐   ┌─────────────┐
-│EventBridge  │   │    Step     │
-│ (Schedule)  │──▶│  Functions  │  AI Workflow (every 6h)
-└─────────────┘   └──────┬──────┘
-                         │
-                         ▼
-                  ┌──────────────┐
-                  │   Lambda     │
-                  │  Functions   │
-                  │ • Fetcher    │
-                  │ • Editor     │──▶ Amazon Bedrock
-                  │ • Publisher  │    (Claude 3.5)
-                  └──────────────┘
-```
-
 **Tech Stack:**
-- Frontend: React Router v7, TypeScript
-- Backend: Python 3.12, AWS Lambda
+- Frontend: HTML5, Vanilla JavaScript, Telegram Web App SDK
+- Backend: Python 3.12, AWS Lambda, Grammy (Telegram Bot Framework)
 - AI: Amazon Bedrock (Claude 3.5 Sonnet)
 - Storage: DynamoDB, S3
 - Orchestration: Step Functions, EventBridge
 - Delivery: Telegram Bot API
 
-## Cost
+## Project Structure
 
-~$50/month for 1000 users
+```
+blockbrief/
+├── bot/                    # Telegram bot (Grammy framework)
+├── core/                   # Shared utilities
+├── backend/functions/      # Lambda functions
+├── infrastructure/         # SAM templates
+├── blockbrief-miniapp/     # Mini App (deployed to GitHub Pages)
+└── UIKit/                  # Telegram design system
+```
+
+## Mini App
+
+The Mini App is a standalone HTML application that provides:
+- 📰 News feed with categories (All, Bitcoin, Crypto, Insights, Stocks)
+- 🔖 Save articles for later
+- 🔍 Search functionality
+- 📱 Telegram design system with smooth animations
+- 🎨 Native Telegram theme support
+
+Deployed at: https://nickrig7.github.io/blockbrief-miniapp/
+
+## Contributing
+
+Contributions welcome! Please read CONTRIBUTING.md first.
+
+## License
+
+See LICENSE file for details.
