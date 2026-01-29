@@ -1,6 +1,6 @@
-# BlockBrief Mini App 📱
+# BlockBrief Mini App
 
-Telegram Mini App for BlockBrief - AI-powered crypto news curator.
+Telegram Mini App for BlockBrief AI powered crypto news curator.
 
 ## Features
 
@@ -14,7 +14,7 @@ Telegram Mini App for BlockBrief - AI-powered crypto news curator.
 
 ## Live Demo
 
-https://nickrig7.github.io/blockbrief-miniapp/
+https://t.me/block_briefbot
 
 ## Tech Stack
 
@@ -45,7 +45,7 @@ This app is deployed to GitHub Pages. Any push to main branch automatically depl
 2. Set the menu button:
    ```
    /mybots → Select bot → Bot Settings → Menu Button
-   Enter URL: https://nickrig7.github.io/blockbrief-miniapp/
+   Enter URL: https://t.me/block_briefbot
    ```
 
 ## Design System
@@ -55,12 +55,6 @@ Based on Telegram's official UIKit with:
 - iOS-style components
 - Telegram color variables
 - Smooth transitions and micro-interactions
-
-## Backend Integration
-
-This Mini App can be integrated with the BlockBrief backend:
-- Repository: https://github.com/YOUR_USERNAME/blockbrief
-- Features: AI curation, user preferences, personalized briefs
 
 ## License
 
