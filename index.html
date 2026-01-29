@@ -300,6 +300,45 @@
             font-size: 11px;
             color: var(--tg-theme-hint-color, #999);
         }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: block;
+        }
+        
+        .modal-content {
+            background: var(--tg-theme-bg-color, #fff);
+            margin: 20px;
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--tg-theme-hint-color, #999);
+            cursor: pointer;
+            line-height: 20px;
+        }
+        
+        .modal-close:active {
+            color: var(--tg-theme-text-color, #000);
+        }
     </style>
 </head>
 <body>
@@ -347,6 +386,13 @@
             <span class="nav-icon">🔍</span>
             <span>Search</span>
         </button>
+    </div>
+    
+    <div id="story-modal" class="modal" onclick="if(event.target === this) closeModal()">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="modal-story"></div>
+        </div>
     </div>
     
     <script>
@@ -397,8 +443,8 @@
             }
             
             const html = '<div class="highlights-title">Headlines</div>' + 
-                top10.map(story => `
-                <div class="highlight-card" onclick="openLink('${story.url}')">
+                top10.map((story, index) => `
+                <div class="highlight-card" onclick="openStoryModal(${index})">
                     ${story.imageUrl ? `<img src="${story.imageUrl}" class="highlight-image" alt="${story.title}" onerror="this.style.display='none'">` : '<div class="highlight-image"></div>'}
                     <div class="highlight-content">
                         <div class="highlight-title">${story.title}</div>
@@ -408,6 +454,43 @@
             `).join('');
             
             highlights.innerHTML = html;
+        }
+        
+        function openStoryModal(index) {
+            const story = allStories[index];
+            const isSaved = savedStories.some(s => s.id === story.id);
+            const storyJson = JSON.stringify(story).replace(/"/g, '&quot;');
+            
+            const html = `
+                <div class="story-card" style="margin: 0;">
+                    ${story.imageUrl ? `<img src="${story.imageUrl}" class="story-image" alt="${story.title}" onerror="this.style.display='none'">` : ''}
+                    <div class="story-meta">
+                        <span class="story-source">${story.source}</span>
+                        <span>•</span>
+                        <span>🕐 ${formatTime(story.publishedAt)}</span>
+                    </div>
+                    <div class="story-title">${story.title}</div>
+                    <div class="story-body">${story.body}</div>
+                    <a href="#" class="read-more" onclick="event.preventDefault(); openLink('${story.url}')">
+                        Read full article →
+                    </a>
+                    <div class="story-actions">
+                        <button class="action-btn ${isSaved ? 'saved' : ''}" data-story-id="${story.id}" onclick="toggleSave('${story.id}')">
+                            ${isSaved ? '✓ Saved' : '🔖 Save'}
+                        </button>
+                        <button class="action-btn" onclick="shareStory(JSON.parse('${storyJson}'))">
+                            📤 Share
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modal-story').innerHTML = html;
+            document.getElementById('story-modal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('story-modal').classList.remove('active');
         }
         
         function renderSavedStories() {
