@@ -22,31 +22,43 @@
             position: sticky;
             top: 0;
             background: var(--tg-theme-bg-color, #ffffff);
-            padding: 16px;
+            padding: 12px 16px;
             border-bottom: 1px solid var(--tg-theme-hint-color, #e0e0e0);
             z-index: 100;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         
-        .header-content {
+        .tabs {
             display: flex;
-            align-items: center;
-            gap: 12px;
+            gap: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
-        .logo {
-            font-size: 32px;
+        .tabs::-webkit-scrollbar {
+            display: none;
         }
         
-        .header-text h1 {
-            font-size: 22px;
-            font-weight: 700;
+        .tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
             color: var(--tg-theme-text-color, #000);
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
         }
         
-        .header-text p {
-            font-size: 13px;
-            color: var(--tg-theme-hint-color, #999);
+        .tab.active {
+            background: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+        
+        .tab:active {
+            transform: scale(0.95);
         }
         
         .container {
@@ -167,12 +179,11 @@
 </head>
 <body>
     <div class="header">
-        <div class="header-content">
-            <div class="logo">📰</div>
-            <div class="header-text">
-                <h1>BlockBrief</h1>
-                <p>AI-Curated Crypto News</p>
-            </div>
+        <div class="tabs">
+            <button class="tab active" onclick="filterCategory('all')">All</button>
+            <button class="tab" onclick="filterCategory('breaking')">Breaking</button>
+            <button class="tab" onclick="filterCategory('defi')">DeFi</button>
+            <button class="tab" onclick="filterCategory('nft')">NFT</button>
         </div>
     </div>
     
@@ -191,6 +202,44 @@
             const tg = window.Telegram.WebApp;
             tg.ready();
             tg.expand();
+        }
+        
+        let allStories = [];
+        let currentCategory = 'all';
+        
+        function filterCategory(category) {
+            currentCategory = category;
+            
+            // Update active tab
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Filter stories
+            let filtered = allStories;
+            if (category !== 'all') {
+                filtered = allStories.filter(story => {
+                    const title = story.title.toLowerCase();
+                    const body = story.body.toLowerCase();
+                    const categories = story.categories ? story.categories.join(' ').toLowerCase() : '';
+                    
+                    if (category === 'breaking') {
+                        return title.includes('breaking') || title.includes('major') || 
+                               title.includes('urgent') || categories.includes('breaking');
+                    } else if (category === 'defi') {
+                        return title.includes('defi') || title.includes('decentralized') || 
+                               title.includes('lending') || title.includes('yield') ||
+                               categories.includes('defi');
+                    } else if (category === 'nft') {
+                        return title.includes('nft') || title.includes('non-fungible') || 
+                               title.includes('collectible') || categories.includes('nft');
+                    }
+                    return true;
+                });
+            }
+            
+            renderStories(filtered);
         }
         
         function formatTime(timestamp) {
@@ -253,16 +302,18 @@
                 const data = await response.json();
                 
                 if (data.Data) {
-                    const stories = data.Data.slice(0, 10).map(item => ({
+                    allStories = data.Data.slice(0, 30).map(item => ({
                         id: item.id,
                         title: item.title,
                         body: item.body.substring(0, 300) + '...',
                         url: item.url,
                         source: item.source_info.name,
                         publishedAt: item.published_on,
-                        imageUrl: item.imageurl || ''
+                        imageUrl: item.imageurl || '',
+                        categories: item.categories ? item.categories.split('|') : []
                     }));
-                    renderStories(stories);
+                    
+                    filterCategory(currentCategory);
                 } else {
                     app.innerHTML = '<div class="error">Failed to load news. Please try again.</div>';
                 }
