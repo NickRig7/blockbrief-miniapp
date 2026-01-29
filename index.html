@@ -183,6 +183,7 @@
             <button class="tab active" onclick="filterCategory('all')">All</button>
             <button class="tab" onclick="filterCategory('bitcoin')">Bitcoin</button>
             <button class="tab" onclick="filterCategory('crypto')">Crypto</button>
+            <button class="tab" onclick="filterCategory('insights')">Insights</button>
             <button class="tab" onclick="filterCategory('stocks')">Stocks</button>
         </div>
     </div>
@@ -206,9 +207,11 @@
         
         let allStories = [];
         let currentCategory = 'all';
+        let displayedStoryIds = new Set();
         
         function filterCategory(category) {
             currentCategory = category;
+            displayedStoryIds.clear();
             
             // Update active tab
             document.querySelectorAll('.tab').forEach(tab => {
@@ -220,35 +223,58 @@
             });
             
             // Filter stories
-            let filtered = allStories;
-            if (category !== 'all') {
+            let filtered = [];
+            
+            if (category === 'all') {
+                filtered = allStories;
+            } else {
                 filtered = allStories.filter(story => {
+                    // Skip if already displayed
+                    if (displayedStoryIds.has(story.id)) {
+                        return false;
+                    }
+                    
                     const title = story.title.toLowerCase();
                     const body = story.body.toLowerCase();
                     const categories = story.categories ? story.categories.join(' ').toLowerCase() : '';
                     const combined = title + ' ' + body + ' ' + categories;
                     
+                    let matches = false;
+                    
                     if (category === 'bitcoin') {
-                        return combined.includes('bitcoin') || combined.includes('btc') || 
-                               combined.includes('satoshi');
+                        matches = (combined.includes('bitcoin') || combined.includes('btc')) &&
+                                 !combined.includes('ethereum') && !combined.includes('altcoin');
                     } else if (category === 'crypto') {
-                        return combined.includes('ethereum') || combined.includes('eth') ||
-                               combined.includes('crypto') || combined.includes('blockchain') ||
-                               combined.includes('altcoin') || combined.includes('defi') ||
-                               combined.includes('nft') || combined.includes('token');
+                        matches = (combined.includes('ethereum') || combined.includes('eth') ||
+                                  combined.includes('altcoin') || combined.includes('defi') ||
+                                  combined.includes('nft') || combined.includes('solana') ||
+                                  combined.includes('cardano') || combined.includes('polygon')) &&
+                                 !combined.includes('bitcoin') && !combined.includes('btc');
+                    } else if (category === 'insights') {
+                        matches = combined.includes('analysis') || combined.includes('insight') ||
+                                 combined.includes('prediction') || combined.includes('forecast') ||
+                                 combined.includes('trend') || combined.includes('outlook') ||
+                                 combined.includes('expert') || combined.includes('opinion');
                     } else if (category === 'stocks') {
-                        return combined.includes('stock') || combined.includes('nasdaq') ||
-                               combined.includes('s&p') || combined.includes('dow') ||
-                               combined.includes('market') || combined.includes('shares') ||
-                               combined.includes('equity');
+                        matches = combined.includes('stock') || combined.includes('nasdaq') ||
+                                 combined.includes('s&p') || combined.includes('dow') ||
+                                 combined.includes('shares') || combined.includes('equity') ||
+                                 combined.includes('wall street');
                     }
-                    return true;
+                    
+                    if (matches) {
+                        displayedStoryIds.add(story.id);
+                    }
+                    
+                    return matches;
                 });
             }
             
-            // Show all stories if no matches found
+            // If no matches, show message
             if (filtered.length === 0 && category !== 'all') {
-                filtered = allStories.slice(0, 5);
+                const app = document.getElementById('app');
+                app.innerHTML = '<div class="container"><div class="error">No ' + category + ' news available right now. Check back later!</div></div>';
+                return;
             }
             
             renderStories(filtered);
