@@ -1,67 +1,66 @@
-# BlockBrief - Telegram Mini App
+# BlockBrief Mini App 📱
 
-AI-powered crypto news curator delivered via Telegram Mini App.
+Telegram Mini App for BlockBrief - AI-powered crypto news curator.
 
 ## Features
 
 - 📰 Real-time crypto news from CryptoCompare API
-- 🎨 Beautiful, responsive UI with Telegram theming
-- 🔄 Auto-refresh every 5 minutes
+- 🎨 Telegram design system with smooth animations
+- 🔖 Save articles for later reading
+- 🔍 Search and filter by category (Bitcoin, Crypto, Insights, Stocks)
 - 📱 Native Telegram Mini App experience
-- ⚡ Fast loading and smooth animations
+- ⚡ Fast loading with staggered animations
+- 🌙 Automatic theme support (light/dark)
 
-## Demo
+## Live Demo
 
-Visit the live app: [Your GitHub Pages URL]
+https://nickrig7.github.io/blockbrief-miniapp/
 
-## Setup
+## Tech Stack
 
-1. Clone this repository
-2. Enable GitHub Pages in repository settings
-3. Set the GitHub Pages URL in your Telegram bot via @BotFather
+- **Frontend**: Vanilla JavaScript, HTML5, CSS3
+- **API**: CryptoCompare News API (free tier)
+- **Design**: Telegram UIKit design system
+- **Telegram**: WebApp SDK
+- **Hosting**: GitHub Pages
+
+## Local Development
+
+```bash
+# Open directly in browser
+open index.html
+
+# Or run a local server
+python3 -m http.server 8000
+# Visit http://localhost:8000
+```
+
+## Deployment
+
+This app is deployed to GitHub Pages. Any push to main branch automatically deploys.
 
 ## Telegram Bot Setup
 
 1. Create a bot with @BotFather
-2. Get your bot token
-3. Set the Mini App URL:
+2. Set the menu button:
    ```
-   /setmenubutton
-   Select your bot
-   Send your GitHub Pages URL
+   /mybots → Select bot → Bot Settings → Menu Button
+   Enter URL: https://nickrig7.github.io/blockbrief-miniapp/
    ```
 
-## Local Development
+## Design System
 
-Simply open `index.html` in a browser to test locally.
+Based on Telegram's official UIKit with:
+- Spring animations (cubic-bezier easing)
+- iOS-style components
+- Telegram color variables
+- Smooth transitions and micro-interactions
 
-## Deployment
+## Backend Integration
 
-### GitHub Pages (Recommended)
-1. Push to GitHub
-2. Go to Settings → Pages
-3. Enable GitHub Pages from main branch
-4. Your app will be live at: `https://YOUR_USERNAME.github.io/REPO_NAME`
-
-### Other Options
-- Netlify: Drag and drop `index.html`
-- Vercel: Import repository
-- Any static hosting service
-
-## Architecture
-
-- **Frontend**: Vanilla JavaScript (no frameworks)
-- **API**: CryptoCompare free tier
-- **Telegram**: WebApp SDK
-- **Styling**: CSS with Telegram theme variables
-
-## Future Enhancements
-
-- AI curation with AWS Lambda + Bedrock
-- User preferences
-- Push notifications
-- Brief history
-- Multi-language support
+This Mini App can be integrated with the BlockBrief backend:
+- Repository: https://github.com/YOUR_USERNAME/blockbrief
+- Features: AI curation, user preferences, personalized briefs
 
 ## License
 
