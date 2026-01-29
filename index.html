@@ -66,6 +66,14 @@
             padding-bottom: 80px;
         }
         
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
         .loading {
             text-align: center;
             padding: 60px 20px;
@@ -180,27 +188,45 @@
             color: var(--tg-theme-button-color, #3390ec);
         }
         
-        .refresh-btn {
+        .bottom-nav {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            font-size: 24px;
-            box-shadow: 0 4px 12px rgba(51, 144, 236, 0.4);
-            cursor: pointer;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-bg-color, #fff);
+            border-top: 1px solid var(--tg-theme-hint-color, #e0e0e0);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
+            justify-content: space-around;
+            padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+            z-index: 1000;
         }
         
-        .refresh-btn:active {
-            transform: scale(0.9);
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            border: none;
+            background: none;
+            color: var(--tg-theme-hint-color, #999);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .nav-item.active {
+            color: var(--tg-theme-button-color, #3390ec);
+        }
+        
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+        
+        .nav-icon {
+            font-size: 24px;
         }
         
         .error {
@@ -221,14 +247,40 @@
         </div>
     </div>
     
-    <div id="app" class="container">
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Loading latest crypto news...</p>
+    <div id="home-page" class="page active">
+        <div id="app" class="container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading latest crypto news...</p>
+            </div>
         </div>
     </div>
     
-    <button class="refresh-btn" onclick="loadNews()" title="Refresh">🔄</button>
+    <div id="saved-page" class="page">
+        <div id="saved-content" class="container"></div>
+    </div>
+    
+    <div id="search-page" class="page">
+        <div class="container">
+            <input type="text" id="search-input" placeholder="Search news..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #e0e0e0); font-size: 16px; margin-bottom: 16px;">
+            <div id="search-results"></div>
+        </div>
+    </div>
+    
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('home')">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('saved')">
+            <span class="nav-icon">🔖</span>
+            <span>Saved</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('search')">
+            <span class="nav-icon">🔍</span>
+            <span>Search</span>
+        </button>
+    </div>
     
     <script>
         // Initialize Telegram WebApp
@@ -242,6 +294,61 @@
         let currentCategory = 'all';
         let displayedStoryIds = new Set();
         let savedStories = JSON.parse(localStorage.getItem('savedStories') || '[]');
+        let currentTab = 'home';
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(`${tab}-page`).classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+            
+            if (tab === 'saved') {
+                renderSavedStories();
+            } else if (tab === 'search') {
+                document.getElementById('search-input').focus();
+            }
+        }
+        
+        function renderSavedStories() {
+            const container = document.getElementById('saved-content');
+            
+            if (savedStories.length === 0) {
+                container.innerHTML = '<div class="error">No saved articles yet. Save articles from the home feed!</div>';
+                return;
+            }
+            
+            const html = savedStories.map(story => {
+                const storyJson = JSON.stringify(story).replace(/"/g, '&quot;');
+                return `
+                <div class="story-card">
+                    ${story.imageUrl ? `<img src="${story.imageUrl}" class="story-image" alt="${story.title}" onerror="this.style.display='none'">` : ''}
+                    <div class="story-meta">
+                        <span class="story-source">${story.source}</span>
+                        <span>•</span>
+                        <span>🕐 ${formatTime(story.publishedAt)}</span>
+                    </div>
+                    <div class="story-title">${story.title}</div>
+                    <div class="story-body">${story.body}</div>
+                    <a href="#" class="read-more" onclick="event.preventDefault(); openLink('${story.url}')">
+                        Read full article →
+                    </a>
+                    <div class="story-actions">
+                        <button class="action-btn saved" data-story-id="${story.id}" onclick="toggleSave('${story.id}')">
+                            ✓ Saved
+                        </button>
+                        <button class="action-btn" onclick="shareStory(JSON.parse('${storyJson}'))">
+                            📤 Share
+                        </button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
         
         function filterCategory(category) {
             currentCategory = category;
@@ -353,7 +460,7 @@
         }
         
         function toggleSave(storyId) {
-            const story = allStories.find(s => s.id === storyId);
+            const story = allStories.find(s => s.id === storyId) || savedStories.find(s => s.id === storyId);
             const index = savedStories.findIndex(s => s.id === storyId);
             
             if (index > -1) {
@@ -364,10 +471,14 @@
             
             localStorage.setItem('savedStories', JSON.stringify(savedStories));
             
-            const btn = document.querySelector(`[data-story-id="${storyId}"]`);
-            if (btn) {
+            const btns = document.querySelectorAll(`[data-story-id="${storyId}"]`);
+            btns.forEach(btn => {
                 btn.classList.toggle('saved');
                 btn.innerHTML = index > -1 ? '🔖 Save' : '✓ Saved';
+            });
+            
+            if (currentTab === 'saved') {
+                renderSavedStories();
             }
         }
         
@@ -409,6 +520,62 @@
             
             app.innerHTML = html;
         }
+        
+        // Search functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase().trim();
+                    const results = document.getElementById('search-results');
+                    
+                    if (!query) {
+                        results.innerHTML = '';
+                        return;
+                    }
+                    
+                    const filtered = allStories.filter(story => 
+                        story.title.toLowerCase().includes(query) || 
+                        story.body.toLowerCase().includes(query)
+                    );
+                    
+                    if (filtered.length === 0) {
+                        results.innerHTML = '<div class="error">No results found</div>';
+                        return;
+                    }
+                    
+                    const html = filtered.map(story => {
+                        const isSaved = savedStories.some(s => s.id === story.id);
+                        const storyJson = JSON.stringify(story).replace(/"/g, '&quot;');
+                        return `
+                        <div class="story-card">
+                            ${story.imageUrl ? `<img src="${story.imageUrl}" class="story-image" alt="${story.title}" onerror="this.style.display='none'">` : ''}
+                            <div class="story-meta">
+                                <span class="story-source">${story.source}</span>
+                                <span>•</span>
+                                <span>🕐 ${formatTime(story.publishedAt)}</span>
+                            </div>
+                            <div class="story-title">${story.title}</div>
+                            <div class="story-body">${story.body}</div>
+                            <a href="#" class="read-more" onclick="event.preventDefault(); openLink('${story.url}')">
+                                Read full article →
+                            </a>
+                            <div class="story-actions">
+                                <button class="action-btn ${isSaved ? 'saved' : ''}" data-story-id="${story.id}" onclick="toggleSave('${story.id}')">
+                                    ${isSaved ? '✓ Saved' : '🔖 Save'}
+                                </button>
+                                <button class="action-btn" onclick="shareStory(JSON.parse('${storyJson}'))">
+                                    📤 Share
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                    
+                    results.innerHTML = html;
+                });
+            }
+        });
         
         async function loadNews() {
             const app = document.getElementById('app');
