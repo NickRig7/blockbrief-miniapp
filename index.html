@@ -340,16 +340,40 @@
                 const data = await response.json();
                 
                 if (data.Data && data.Data.length > 0) {
-                    allStories = data.Data.slice(0, 30).map(item => ({
-                        id: item.id,
-                        title: item.title,
-                        body: item.body.substring(0, 300) + '...',
-                        url: item.url,
-                        source: item.source_info.name,
-                        publishedAt: item.published_on,
-                        imageUrl: item.imageurl || '',
-                        categories: item.categories ? item.categories.split('|') : []
-                    }));
+                    // Remove duplicates based on title similarity and image
+                    const seenTitles = new Set();
+                    const seenImages = new Set();
+                    
+                    allStories = data.Data
+                        .filter(item => {
+                            // Create a normalized title for comparison
+                            const normalizedTitle = item.title.toLowerCase().substring(0, 50);
+                            const imageUrl = item.imageurl || '';
+                            
+                            // Skip if we've seen this title or image
+                            if (seenTitles.has(normalizedTitle) || 
+                                (imageUrl && seenImages.has(imageUrl))) {
+                                return false;
+                            }
+                            
+                            seenTitles.add(normalizedTitle);
+                            if (imageUrl) {
+                                seenImages.add(imageUrl);
+                            }
+                            
+                            return true;
+                        })
+                        .slice(0, 50)
+                        .map(item => ({
+                            id: item.id,
+                            title: item.title,
+                            body: item.body.substring(0, 300) + '...',
+                            url: item.url,
+                            source: item.source_info.name,
+                            publishedAt: item.published_on,
+                            imageUrl: item.imageurl || '',
+                            categories: item.categories ? item.categories.split('|') : []
+                        }));
                     
                     filterCategory(currentCategory);
                 } else {
