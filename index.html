@@ -147,6 +147,39 @@
             text-decoration: none;
         }
         
+        .story-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            background: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .action-btn.saved {
+            color: var(--tg-theme-button-color, #3390ec);
+        }
+        
         .refresh-btn {
             position: fixed;
             bottom: 20px;
@@ -208,6 +241,7 @@
         let allStories = [];
         let currentCategory = 'all';
         let displayedStoryIds = new Set();
+        let savedStories = JSON.parse(localStorage.getItem('savedStories') || '[]');
         
         function filterCategory(category) {
             currentCategory = category;
@@ -304,6 +338,39 @@
             }
         }
         
+        function shareStory(story) {
+            const text = `${story.title}\n\n${story.url}`;
+            
+            if (navigator.share) {
+                navigator.share({ title: story.title, text: story.body.substring(0, 100), url: story.url })
+                    .catch(() => {});
+            } else if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(story.url)}&text=${encodeURIComponent(story.title)}`);
+            } else {
+                navigator.clipboard.writeText(text);
+                alert('Link copied to clipboard!');
+            }
+        }
+        
+        function toggleSave(storyId) {
+            const story = allStories.find(s => s.id === storyId);
+            const index = savedStories.findIndex(s => s.id === storyId);
+            
+            if (index > -1) {
+                savedStories.splice(index, 1);
+            } else {
+                savedStories.push(story);
+            }
+            
+            localStorage.setItem('savedStories', JSON.stringify(savedStories));
+            
+            const btn = document.querySelector(`[data-story-id="${storyId}"]`);
+            if (btn) {
+                btn.classList.toggle('saved');
+                btn.innerHTML = index > -1 ? '🔖 Save' : '✓ Saved';
+            }
+        }
+        
         function renderStories(stories) {
             const app = document.getElementById('app');
             
@@ -312,7 +379,10 @@
                 return;
             }
             
-            const html = '<div class="container">' + stories.map(story => `
+            const html = '<div class="container">' + stories.map(story => {
+                const isSaved = savedStories.some(s => s.id === story.id);
+                const storyJson = JSON.stringify(story).replace(/"/g, '&quot;');
+                return `
                 <div class="story-card">
                     ${story.imageUrl ? `<img src="${story.imageUrl}" class="story-image" alt="${story.title}" onerror="this.style.display='none'">` : ''}
                     <div class="story-meta">
@@ -325,8 +395,17 @@
                     <a href="#" class="read-more" onclick="event.preventDefault(); openLink('${story.url}')">
                         Read full article →
                     </a>
+                    <div class="story-actions">
+                        <button class="action-btn ${isSaved ? 'saved' : ''}" data-story-id="${story.id}" onclick="toggleSave('${story.id}')">
+                            ${isSaved ? '✓ Saved' : '🔖 Save'}
+                        </button>
+                        <button class="action-btn" onclick="shareStory(JSON.parse('${storyJson}'))">
+                            📤 Share
+                        </button>
+                    </div>
                 </div>
-            `).join('') + '</div>';
+            `;
+            }).join('') + '</div>';
             
             app.innerHTML = html;
         }
