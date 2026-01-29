@@ -430,9 +430,10 @@
     </div>
     
     <div id="search-page" class="page">
+        <div style="position: sticky; top: 0; background: var(--tg-theme-bg-color, #fff); padding: 12px 16px; z-index: 10; border-bottom: 0.5px solid var(--tg-theme-hint-color, rgba(0, 0, 0, 0.08));">
+            <input type="text" id="search-input" placeholder="Search news..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #e0e0e0); font-size: 16px;">
+        </div>
         <div class="container">
-            <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 16px; color: var(--tg-theme-text-color, #000);">BlockBrief</h1>
-            <input type="text" id="search-input" placeholder="Search news..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--tg-theme-hint-color, #e0e0e0); font-size: 16px; margin-bottom: 12px;">
             <div id="search-results"></div>
             <div id="highlights" class="highlights-section"></div>
         </div>
