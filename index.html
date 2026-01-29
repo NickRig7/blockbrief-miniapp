@@ -213,8 +213,11 @@
             // Update active tab
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
+                if (tab.textContent.toLowerCase() === category || 
+                    (category === 'all' && tab.textContent === 'All')) {
+                    tab.classList.add('active');
+                }
             });
-            event.target.classList.add('active');
             
             // Filter stories
             let filtered = allStories;
@@ -223,20 +226,27 @@
                     const title = story.title.toLowerCase();
                     const body = story.body.toLowerCase();
                     const categories = story.categories ? story.categories.join(' ').toLowerCase() : '';
+                    const combined = title + ' ' + body + ' ' + categories;
                     
                     if (category === 'breaking') {
-                        return title.includes('breaking') || title.includes('major') || 
-                               title.includes('urgent') || categories.includes('breaking');
+                        return combined.includes('breaking') || combined.includes('major') || 
+                               combined.includes('urgent') || combined.includes('alert');
                     } else if (category === 'defi') {
-                        return title.includes('defi') || title.includes('decentralized') || 
-                               title.includes('lending') || title.includes('yield') ||
-                               categories.includes('defi');
+                        return combined.includes('defi') || combined.includes('decentralized') || 
+                               combined.includes('lending') || combined.includes('yield') ||
+                               combined.includes('uniswap') || combined.includes('aave');
                     } else if (category === 'nft') {
-                        return title.includes('nft') || title.includes('non-fungible') || 
-                               title.includes('collectible') || categories.includes('nft');
+                        return combined.includes('nft') || combined.includes('non-fungible') || 
+                               combined.includes('collectible') || combined.includes('opensea') ||
+                               combined.includes('art') || combined.includes('token');
                     }
                     return true;
                 });
+            }
+            
+            // Show all stories if no matches found
+            if (filtered.length === 0 && category !== 'all') {
+                filtered = allStories.slice(0, 5);
             }
             
             renderStories(filtered);
@@ -270,7 +280,7 @@
             const app = document.getElementById('app');
             
             if (!stories || stories.length === 0) {
-                app.innerHTML = '<div class="error">No news available. Try refreshing.</div>';
+                app.innerHTML = '<div class="container"><div class="error">No news in this category. Try another tab.</div></div>';
                 return;
             }
             
@@ -295,13 +305,13 @@
         
         async function loadNews() {
             const app = document.getElementById('app');
-            app.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading latest crypto news...</p></div>';
+            app.innerHTML = '<div class="container"><div class="loading"><div class="spinner"></div><p>Loading latest crypto news...</p></div></div>';
             
             try {
                 const response = await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN');
                 const data = await response.json();
                 
-                if (data.Data) {
+                if (data.Data && data.Data.length > 0) {
                     allStories = data.Data.slice(0, 30).map(item => ({
                         id: item.id,
                         title: item.title,
@@ -315,11 +325,13 @@
                     
                     filterCategory(currentCategory);
                 } else {
-                    app.innerHTML = '<div class="error">Failed to load news. Please try again.</div>';
+                    app.innerHTML = '<div class="container"><div class="error">Failed to load news. Please try again.</div></div>';
                 }
             } catch (error) {
                 console.error('Error:', error);
-                app.innerHTML = '<div class="error">Network error. Please check your connection.</div>';
+                app.innerHTML = '<div class="container"><div class="error">Loading news... Please wait.</div></div>';
+                // Retry after 2 seconds
+                setTimeout(loadNews, 2000);
             }
         }
         
