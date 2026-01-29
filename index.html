@@ -396,7 +396,7 @@
                 return;
             }
             
-            const html = '<div class="highlights-title">📰 Latest Headlines</div>' + 
+            const html = '<div class="highlights-title">Headlines</div>' + 
                 top10.map(story => `
                 <div class="highlight-card" onclick="openLink('${story.url}')">
                     ${story.imageUrl ? `<img src="${story.imageUrl}" class="highlight-image" alt="${story.title}" onerror="this.style.display='none'">` : '<div class="highlight-image"></div>'}
