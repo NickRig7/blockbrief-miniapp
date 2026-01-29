@@ -181,9 +181,9 @@
     <div class="header">
         <div class="tabs">
             <button class="tab active" onclick="filterCategory('all')">All</button>
-            <button class="tab" onclick="filterCategory('breaking')">Breaking</button>
-            <button class="tab" onclick="filterCategory('defi')">DeFi</button>
-            <button class="tab" onclick="filterCategory('nft')">NFT</button>
+            <button class="tab" onclick="filterCategory('bitcoin')">Bitcoin</button>
+            <button class="tab" onclick="filterCategory('crypto')">Crypto</button>
+            <button class="tab" onclick="filterCategory('stocks')">Stocks</button>
         </div>
     </div>
     
@@ -228,17 +228,19 @@
                     const categories = story.categories ? story.categories.join(' ').toLowerCase() : '';
                     const combined = title + ' ' + body + ' ' + categories;
                     
-                    if (category === 'breaking') {
-                        return combined.includes('breaking') || combined.includes('major') || 
-                               combined.includes('urgent') || combined.includes('alert');
-                    } else if (category === 'defi') {
-                        return combined.includes('defi') || combined.includes('decentralized') || 
-                               combined.includes('lending') || combined.includes('yield') ||
-                               combined.includes('uniswap') || combined.includes('aave');
-                    } else if (category === 'nft') {
-                        return combined.includes('nft') || combined.includes('non-fungible') || 
-                               combined.includes('collectible') || combined.includes('opensea') ||
-                               combined.includes('art') || combined.includes('token');
+                    if (category === 'bitcoin') {
+                        return combined.includes('bitcoin') || combined.includes('btc') || 
+                               combined.includes('satoshi');
+                    } else if (category === 'crypto') {
+                        return combined.includes('ethereum') || combined.includes('eth') ||
+                               combined.includes('crypto') || combined.includes('blockchain') ||
+                               combined.includes('altcoin') || combined.includes('defi') ||
+                               combined.includes('nft') || combined.includes('token');
+                    } else if (category === 'stocks') {
+                        return combined.includes('stock') || combined.includes('nasdaq') ||
+                               combined.includes('s&p') || combined.includes('dow') ||
+                               combined.includes('market') || combined.includes('shares') ||
+                               combined.includes('equity');
                     }
                     return true;
                 });
