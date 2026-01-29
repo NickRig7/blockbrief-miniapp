@@ -73,11 +73,11 @@ export function middleware(guardrail?: { id: string, version?: string }) {
     mw.command('start', ctx =>
 
         ctx.reply(
-            'BlockBrief is a Telegram Mini App where an AI Editor in Chief analyzes multiple crypto news sources, decides what matters, formats concise briefs and delivers them to users in real time, efficiently, autonomously and at scale.',
+            'BlockBrief analyzes multiple crypto news sources, decides what matters, formats concise briefs and delivers them to users in real time, efficiently, autonomously and at scale.',
             {
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: 'Open BlockBrief', web_app: { url: 'https://tma.blockbrief.app' } }
+                        { text: 'Open BlockBrief', web_app: { url: 'https://nickrig7.github.io/blockbrief-miniapp/' } }
                     ]]
                 }
             }
