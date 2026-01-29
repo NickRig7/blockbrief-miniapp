@@ -563,7 +563,13 @@
             const container = document.getElementById('saved-content');
             
             if (savedStories.length === 0) {
-                container.innerHTML = '<div class="error">No saved articles yet. Save articles from the home feed!</div>';
+                container.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center;">
+                        <div style="font-size: 80px; margin-bottom: 20px;">🔖</div>
+                        <div style="font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--tg-theme-text-color, #000);">No saved articles yet</div>
+                        <div style="font-size: 15px; color: var(--tg-theme-hint-color, #8E8E93);">Save articles from the home feed to read them later</div>
+                    </div>
+                `;
                 return;
             }
             
