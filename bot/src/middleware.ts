@@ -77,7 +77,7 @@ export function middleware(guardrail?: { id: string, version?: string }) {
             {
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: 'Open BlockBrief', web_app: { url: 'https://d2v2tke97m376i.cloudfront.net/app' } }
+                        { text: 'Open BlockBrief', web_app: { url: 'https://nickrig7.github.io/blockbrief-miniapp/' } }
                     ]]
                 }
             }
