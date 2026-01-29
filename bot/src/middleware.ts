@@ -57,6 +57,7 @@ export async function supportedUpdates(): Promise<Array<Exclude<keyof Update, 'u
         "business_connection",
         "business_message",
         "edited_business_message",
+        "callback_query",
     ]
 }
 
@@ -83,6 +84,10 @@ export function middleware(guardrail?: { id: string, version?: string }) {
             }
         )
     )
+
+    mw.on('callback_query:data', async ctx => {
+        await ctx.answerCallbackQuery()
+    })
 
     mw.on([':text', ':photo'], async ctx => {
 

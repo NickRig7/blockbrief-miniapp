@@ -1,0 +1,39 @@
+{
+  "Comment": "BlockBrief AI Editor Workflow",
+  "StartAt": "FetchNews",
+  "States": {
+    "FetchNews": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${FetcherFunctionArn}",
+        "Payload": {
+          "action": "fetch"
+        }
+      },
+      "ResultPath": "$.fetchResult",
+      "Next": "AnalyzeAndSelect"
+    },
+    "AnalyzeAndSelect": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${EditorFunctionArn}",
+        "Payload": {
+          "action": "curate"
+        }
+      },
+      "ResultPath": "$.brief",
+      "Next": "PublishBrief"
+    },
+    "PublishBrief": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${PublisherFunctionArn}",
+        "Payload.$": "$.brief.Payload"
+      },
+      "End": true
+    }
+  }
+}

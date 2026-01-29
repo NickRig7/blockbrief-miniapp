@@ -1,0 +1,274 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: BlockBrief - AI Crypto News Curator
+
+Parameters:
+  TelegramBotToken:
+    Type: String
+    NoEcho: true
+    Description: Telegram Bot Token from @BotFather
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 60
+    MemorySize: 512
+    Environment:
+      Variables:
+        USERS_TABLE: !Ref UsersTable
+        NEWS_TABLE: !Ref NewsTable
+        BRIEFS_TABLE: !Ref BriefsTable
+        TELEGRAM_BOT_TOKEN: !Ref TelegramBotToken
+        FRONTEND_URL: !GetAtt CloudFrontDistribution.DomainName
+
+Resources:
+  # DynamoDB Tables
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: blockbrief-users
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+
+  NewsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: blockbrief-news
+      BillingMode: PAY_PER_REQUEST
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: ttl
+      AttributeDefinitions:
+        - AttributeName: storyId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: storyId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: timestamp-index
+          KeySchema:
+            - AttributeName: timestamp
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  BriefsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: blockbrief-briefs
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: briefId
+          AttributeType: S
+        - AttributeName: publishedAt
+          AttributeType: N
+      KeySchema:
+        - AttributeName: briefId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: published-index
+          KeySchema:
+            - AttributeName: publishedAt
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # Lambda Functions
+  FetcherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/
+      Handler: fetcher.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref NewsTable
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(6 hours)
+
+  EditorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/
+      Handler: editor.handler
+      Timeout: 300
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref NewsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BriefsTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: !Sub arn:aws:bedrock:${AWS::Region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0
+
+  PublisherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/
+      Handler: publisher.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BriefsTable
+
+  TelegramWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/
+      Handler: telegram_webhook.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /webhook
+            Method: post
+            RestApiId: !Ref ApiGateway
+            Auth:
+              ApiKeyRequired: false
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/functions/
+      Handler: api.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BriefsTable
+      Events:
+        GetBriefs:
+          Type: Api
+          Properties:
+            Path: /briefs
+            Method: get
+            RestApiId: !Ref ApiGateway
+            Auth:
+              ApiKeyRequired: false
+        GetPreferences:
+          Type: Api
+          Properties:
+            Path: /preferences
+            Method: get
+            RestApiId: !Ref ApiGateway
+            Auth:
+              ApiKeyRequired: false
+        UpdatePreferences:
+          Type: Api
+          Properties:
+            Path: /preferences
+            Method: post
+            RestApiId: !Ref ApiGateway
+            Auth:
+              ApiKeyRequired: false
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Telegram-Init-Data'"
+        AllowOrigin: "'*'"
+
+  # Step Functions
+  EditorStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: ../infrastructure/workflow.asl.json
+      DefinitionSubstitutions:
+        FetcherFunctionArn: !GetAtt FetcherFunction.Arn
+        EditorFunctionArn: !GetAtt EditorFunction.Arn
+        PublisherFunctionArn: !GetAtt PublisherFunction.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref FetcherFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref EditorFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PublisherFunction
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(6 hours)
+
+  # S3 + CloudFront for Frontend
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub blockbrief-frontend-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub blockbrief-oac-${AWS::AccountId}
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !Ref CloudFrontOAC
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub ${FrontendBucket.Arn}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+
+Outputs:
+  ApiUrl:
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod
+  FrontendUrl:
+    Value: !Sub https://${CloudFrontDistribution.DomainName}
+  WebhookUrl:
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/webhook

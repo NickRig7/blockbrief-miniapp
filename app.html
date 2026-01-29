@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlockBrief</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #f5f5f5; }
+        .header { background: #fff; padding: 20px; border-bottom: 1px solid #ddd; }
+        .header h1 { font-size: 24px; }
+        .container { padding: 16px; }
+        .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card h3 { font-size: 16px; margin-bottom: 8px; }
+        .card p { font-size: 14px; color: #666; line-height: 1.5; }
+        .source { color: #3390ec; font-size: 12px; margin-top: 8px; }
+        .loading { text-align: center; padding: 40px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📰 BlockBrief</h1>
+    </div>
+    <div id="app" class="container">
+        <div class="loading">Loading news...</div>
+    </div>
+    <script>
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+        
+        async function loadNews() {
+            try {
+                const res = await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN');
+                const data = await res.json();
+                const app = document.getElementById('app');
+                
+                app.innerHTML = data.Data.slice(0, 10).map(item => `
+                    <div class="card">
+                        <h3>${item.title}</h3>
+                        <p>${item.body.substring(0, 200)}...</p>
+                        <div class="source">${item.source_info.name}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('app').innerHTML = '<div class="loading">Error loading news</div>';
+            }
+        }
+        
+        loadNews();
+    </script>
+</body>
+</html>
