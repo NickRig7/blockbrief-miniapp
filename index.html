@@ -26,6 +26,11 @@
             border-bottom: 1px solid var(--tg-theme-hint-color, #e0e0e0);
             z-index: 100;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: opacity 0.2s;
+        }
+        
+        .header.hidden {
+            display: none;
         }
         
         .tabs {
@@ -308,6 +313,13 @@
             document.getElementById(`${tab}-page`).classList.add('active');
             event.target.closest('.nav-item').classList.add('active');
             
+            const header = document.querySelector('.header');
+            if (tab === 'home') {
+                header.classList.remove('hidden');
+            } else {
+                header.classList.add('hidden');
+            }
+            
             if (tab === 'saved') {
                 renderSavedStories();
             } else if (tab === 'search') {
@@ -354,6 +366,16 @@
         }
         
         function filterCategory(category) {
+            // Always switch to home tab when filtering
+            if (currentTab !== 'home') {
+                currentTab = 'home';
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                document.getElementById('home-page').classList.add('active');
+                document.querySelector('.nav-item').classList.add('active');
+                document.querySelector('.header').classList.remove('hidden');
+            }
+            
             currentCategory = category;
             displayedStoryIds.clear();
             
